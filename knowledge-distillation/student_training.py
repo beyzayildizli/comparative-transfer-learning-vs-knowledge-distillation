@@ -18,6 +18,19 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
     import seaborn as sns
     from train_light_model import ResNet18Light
+    import random
+    import numpy as np
+
+    def set_seed(seed=42):
+        random.seed(seed)
+        np.random.seed(seed)
+        torch.manual_seed(seed)
+        torch.cuda.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
+
+    set_seed(42)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -78,7 +91,7 @@ if __name__ == "__main__":
                 print(f"New best accuracy: {best_accuracy:.2f}% at epoch {best_epoch}")
 
         if best_model_state_dict is not None:
-            model_save_path = "knowledge-distillation/saved_models/kd_student_64_adam.pth"
+            model_save_path = "knowledge-distillation/saved_models/kd_student_64_adam_T2.pth"
             torch.save(best_model_state_dict, model_save_path)
 
             print(f"\nBest model saved from epoch {best_epoch} with accuracy: {best_accuracy:.2f}%")
@@ -100,12 +113,11 @@ if __name__ == "__main__":
             plt.ylabel("Actual")
 
             os.makedirs("knowledge-distillation/results", exist_ok=True)
-            save_path = f"knowledge-distillation/results/kd_student_64_adam.png"
+            save_path = f"knowledge-distillation/results/kd_student_64_adam_T2.png"
             plt.savefig(save_path)
             plt.close()
 
             print(f"Confusion matrix for best epoch saved as {save_path}")
-
 
     def test(model, test_loader, device):
         model.to(device)
@@ -138,11 +150,6 @@ if __name__ == "__main__":
         print("Öğretmen modeli bulunamadı! Önce modeli eğitin.")
         exit()
     
-    light_resnet_model_path = "knowledge-distillation/saved_models/lightmodel_64_adam.pth"
-    if not os.path.exists(light_resnet_model_path):
-        print("lightmodel bulunamadı! Önce modeli eğitin.")
-        exit()
-    
     teacher_model = ResNet18(num_classes=10).to(device)
     teacher_model.load_state_dict(torch.load(teacher_model_path))
     teacher_model.eval()
@@ -167,7 +174,6 @@ if __name__ == "__main__":
     train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=64, shuffle=True, num_workers=2)
     test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=64, shuffle=False, num_workers=2)
 
-    torch.manual_seed(42)
     student_model = ResNet18Light(num_classes=10).to(device)
     #student_model = ResNet18(num_classes=10).to(device)
 
